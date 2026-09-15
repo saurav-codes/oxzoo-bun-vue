@@ -32,7 +32,7 @@ Set `GREETING_TAG` in the ox Environment editor **before the first deploy**: the
    GREETING_TAG=demo-1
    ```
 3. Press **Deploy**. On the first deploy ox:
-   - installs `nodejs`/`npm` (distro packages) and uses npm to install Bun globally (Ubuntu has no bun apt package),
+   - installs `nodejs` (from the NodeSource apt repo, bundling npm) and uses npm to install Bun globally (Ubuntu has no bun apt package),
    - runs `bun install` against the committed `bun.lock`,
    - runs `bun run build`, which produces `dist/`,
    - starts `bun src/index.ts` as a systemd unit on `127.0.0.1:9105`.
