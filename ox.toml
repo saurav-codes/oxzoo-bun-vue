@@ -1,0 +1,31 @@
+# oxzoo-bun-vue: Bun + Hono API with a Vite-built Vue 3 SPA.
+# nginx serves dist/ (spa = true) and proxies only the api_paths below.
+
+name = "oxzoo-bun-vue"
+branch = "main"
+runtime = "bun"
+framework = "generic"
+package_manager = "bun"
+port = 9105
+environment_file = "/etc/ox/apps/oxzoo-bun-vue.env"
+required_packages = ["nodejs", "npm"] # distro node/npm exist only to bootstrap bun
+
+[frontend]
+dist = "dist"
+api_paths = ["/api", "/health"]
+
+[[processes]]
+name = "web"
+command = "bun src/index.ts"
+readiness = "http://127.0.0.1:{port}/health"
+
+[deploy]
+# Ubuntu has no bun apt package: install bun via npm, then resolve the lockfile.
+install = ["npm install -g bun", "bun install"]
+build = ["bun", "run", "build"]
+health_url = "http://127.0.0.1:9105/health"
+
+[[domains]]
+name = "bun-vue.oxzoo.sorv.dev"
+tls = false
+spa = true
