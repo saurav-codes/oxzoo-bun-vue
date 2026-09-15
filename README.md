@@ -32,10 +32,10 @@ Set `GREETING_TAG` in the ox Environment editor **before the first deploy**: the
    GREETING_TAG=demo-1
    ```
 3. Press **Deploy**. On the first deploy ox:
-   - installs `nodejs` (from the NodeSource apt repo, bundling npm) and uses npm to install Bun globally (Ubuntu has no bun apt package),
-   - runs `bun install` against the committed `bun.lock`,
-   - runs `bun run build`, which produces `dist/`,
-   - starts `bun src/index.ts` as a systemd unit on `127.0.0.1:9105`.
+   - installs `nodejs` (from the NodeSource apt repo, bundling npm),
+   - runs `npm install`: bun is pinned as a local devDependency (Ubuntu has no bun apt package, and deploy hooks run as the unprivileged project user, so a global install is impossible), so this bootstraps `node_modules/.bin/bun` plus every dependency; exact pins in `package.json` keep it deterministic,
+   - runs `npm run build`, which produces `dist/`,
+   - starts `node_modules/.bin/bun src/index.ts` as a systemd unit on `127.0.0.1:9105`.
 
 nginx serves `dist/` with an SPA fallback and proxies only `/api` and `/health` to the Bun process (see `api_paths` in `ox.toml`); everything else is static.
 

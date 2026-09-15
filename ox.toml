@@ -25,13 +25,15 @@ api_paths = ["/api", "/health"]
 
 [[processes]]
 name = "web"
-command = "bun src/index.ts"
+command = "node_modules/.bin/bun src/index.ts"
 readiness = "http://127.0.0.1:{port}/health"
 
 [deploy]
-# Ubuntu has no bun apt package: install bun via npm, then resolve the lockfile.
-install = ["npm install -g bun", "bun install"]
-build = ["bun", "run", "build"]
+# Hooks run as the unprivileged project user, so bun installs as a local
+# devDependency (npm bootstraps it; exact pins keep it deterministic) and
+# the process runs it from node_modules/.bin.
+install = ["npm", "install"]
+build = ["npm", "run", "build"]
 health_url = "http://127.0.0.1:9105/health"
 
 [[domains]]
