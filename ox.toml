@@ -4,10 +4,8 @@
 name = "oxzoo-bun-vue"
 branch = "main"
 runtime = "bun"
-framework = "generic"
 package_manager = "bun"
 port = 9105
-environment_file = "/etc/ox/projects/oxzoo-bun-vue.env"
 # NodeSource node bundles npm; distro npm conflicts with NodeSource nodejs
 # when both are requested from apt on one host.
 required_packages = ["nodejs"]
