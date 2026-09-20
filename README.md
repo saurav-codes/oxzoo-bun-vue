@@ -1,6 +1,6 @@
 # oxzoo-bun-vue
 
-An [ox](https://github.com/saurav-codes/ox) deploy example: a Bun + Hono API serving a Vite-built Vue 3 SPA, with one environment variable (`GREETING_TAG`) flowing to the backend at **runtime** and to the frontend at **build time**, deployed by ox onto a single Ubuntu VPS (systemd + nginx).
+An [ox](https://github.com/saurav-codes/ox-dev) deploy example: a Bun + Hono API serving a Vite-built Vue 3 SPA, with one environment variable (`GREETING_TAG`) flowing to the backend at **runtime** and to the frontend at **build time**, deployed by ox onto a single Ubuntu VPS (systemd + nginx).
 
 ## Stack
 
@@ -16,7 +16,7 @@ An [ox](https://github.com/saurav-codes/ox) deploy example: a Bun + Hono API ser
 
 One variable, two paths:
 
-- **Runtime (API)**: `src/index.ts` reads `process.env.GREETING_TAG` on every request to `/api/greeting`. ox injects the value from `/etc/ox/apps/oxzoo-bun-vue.env` into the systemd unit, so changing it in the ox Environment editor and redeploying is enough.
+- **Runtime (API)**: `src/index.ts` reads `process.env.GREETING_TAG` on every request to `/api/greeting`. ox injects the value from the project's env file (`/srv/ox/oxzoo-bun-vue/env`) into the systemd unit, so changing it in the ox Environment editor and redeploying is enough.
 - **Build time (SPA)**: `client/src/App.vue` reads `import.meta.env.GREETING_TAG`. Vite exposes only variables matching `envPrefix` (`GREETING_`, `VITE_`) and bakes them into the bundle during `bun run build`. The value is frozen into `dist/assets/*.js` until the next build.
 
 Set `GREETING_TAG` in the ox Environment editor **before the first deploy**: the build hook runs with that environment, so the SPA bundle gets the value on the very first deploy.
@@ -25,7 +25,7 @@ Set `GREETING_TAG` in the ox Environment editor **before the first deploy**: the
 
 1. Push this repo, then connect it as a project in the ox dashboard using the clone URL:
    ```
-   https://github.com/saurav-codes/oxzoo-bun-vue.git
+   git@github.com:saurav-codes/oxzoo-bun-vue.git
    ```
 2. In the project's Environment editor, set:
    ```
