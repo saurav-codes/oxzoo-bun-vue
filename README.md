@@ -2,44 +2,69 @@
 
 Deployed with [ox](https://deploywithox.com): deploy a repo to your own server with one command, no Docker. [Docs](https://deploywithox.com/docs) · [Guide for this stack](https://deploywithox.com/docs/guides/hono-bun)
 
-An [ox](https://deploywithox.com) deploy example: a Bun + Hono API serving a Vite-built Vue 3 SPA, with one environment variable (`GREETING_TAG`) flowing to the backend at **runtime** and to the frontend at **build time**, deployed by ox onto a single Ubuntu VPS (systemd + nginx).
+An [ox](https://deploywithox.com) deploy example: a Bun + Hono API serving a Vite-built Vue 3 SPA, with one variable (`GREETING_TAG`) read by the API at **run time** and baked into the SPA at **build time**. ox deploys it to your own Ubuntu server with systemd and Caddy.
 
 ## Stack
 
-| Layer    | Tool                  | Version |
-| -------- | --------------------- | ------- |
-| Runtime  | Bun                   | 1.x     |
-| API      | Hono                  | 4       |
-| Frontend | Vue                   | 3       |
-| Bundler  | Vite                  | 5       |
-| Deploy   | ox (`ox.toml`)        | -       |
+| Layer    | Tool | Version |
+| -------- | ---- | ------- |
+| Runtime  | Bun  | 1.3 (ox's default) |
+| API      | Hono | 4 |
+| Frontend | Vue  | 3 |
+| Bundler  | Vite | 5 |
+
+## ox.toml
+
+```toml
+# Bun + Hono API serving a Vite/Vue SPA; bun comes from detection (bun.lock).
+
+[app]
+health = "/health"
+
+[static]
+dir = "dist"
+spa = true
+api = ["/api", "/health"]
+```
+
+ox detects the rest from the repo: `bun install --frozen-lockfile` from `bun.lock`, and `bun run build` and `bun run start` from `package.json`. Caddy serves `dist/` with the SPA fallback and sends only `/api` and `/health` to the Bun process on `$PORT`.
 
 ## Environment flow
 
-One variable, two paths:
+- **Run time (API):** `src/index.ts` reads `process.env.GREETING_TAG` on every request to `/api/greeting`.
+- **Build time (SPA):** `client/src/App.vue` reads `import.meta.env.GREETING_TAG`. Vite exposes only variables matching `envPrefix` (`GREETING_`, `VITE_`) and bakes them into the bundle during `bun run build`.
 
-- **Runtime (API)**: `src/index.ts` reads `process.env.GREETING_TAG` on every request to `/api/greeting`. ox injects the value from the project's env file (`/srv/ox/oxzoo-bun-vue/env`) into the systemd unit, so changing it in the ox Environment editor and redeploying is enough.
-- **Build time (SPA)**: `client/src/App.vue` reads `import.meta.env.GREETING_TAG`. Vite exposes only variables matching `envPrefix` (`GREETING_`, `VITE_`) and bakes them into the bundle during `bun run build`. The value is frozen into `dist/assets/*.js` until the next build.
-
-Set `GREETING_TAG` in the ox Environment editor **before the first deploy**: the build hook runs with that environment, so the SPA bundle gets the value on the very first deploy.
+ox sets your variables before the build runs, so the first deploy already bakes the value in. Changing it with `ox vars set` redeploys, which rebuilds the SPA.
 
 ## Deploy with ox
 
-1. Push this repo, then connect it as a project in the ox dashboard using the clone URL:
-   ```
-   git@github.com:saurav-codes/oxzoo-bun-vue.git
-   ```
-2. In the project's Environment editor, set:
-   ```
-   GREETING_TAG=demo-1
-   ```
-3. Press **Deploy**. On the first deploy ox:
-   - installs `nodejs` (from the NodeSource apt repo, bundling npm),
-   - runs `npm install`: bun is pinned as a local devDependency (Ubuntu has no bun apt package, and deploy hooks run as the unprivileged project user, so a global install is impossible), so this bootstraps `node_modules/.bin/bun` plus every dependency; exact pins in `package.json` keep it deterministic,
-   - runs `npm run build`, which produces `dist/`,
-   - starts `node_modules/.bin/bun src/index.ts` as a systemd unit on `127.0.0.1:9105`.
+```sh
+curl -fsSL https://deploywithox.com/install.sh | sh
+ox login
+ox new https://github.com/saurav-codes/oxzoo-bun-vue
+ox review oxzoo-bun-vue --from-file .env.example --wait
+```
 
-nginx serves `dist/` with an SPA fallback and proxies only `/api` and `/health` to the Bun process (see `api_paths` in `ox.toml`); everything else is static.
+`ox review` sets `GREETING_TAG` from `.env.example` (edit the value first) and streams the first deploy. `ox status oxzoo-bun-vue` prints the URL. Run `ox check` in a clone to see the plan offline:
+
+```console
+$ ox check .
+ox check . (manifest: ox.toml)
+
+  app.start                  bun run start                                        detected:package.json
+  app.health                 /health                                              declared
+  static.dir                 dist                                                 declared
+  static.spa                 true                                                 declared
+  static.api                 /api, /health                                        declared
+  build.install              bun install --frozen-lockfile                        detected:bun.lock
+  build.commands[0]          bun run build                                        detected:package.json
+  tools.bun                  1.3                                                  default
+
+  Provided by ox: PORT, HOST, OX_ENV, OX_PROJECT, OX_RELEASE, OX_DATA_DIR, PUBLIC_URL, PUBLIC_HOST
+  Set on the dashboard before the first deploy: GREETING_TAG
+
+Ready to deploy.
+```
 
 ## Local development
 
@@ -51,11 +76,11 @@ GREETING_TAG=localtest PORT=9105 bun src/index.ts
 
 ## Expected output
 
-Visiting the site shows the project heading plus two lines (tag value depends on the environment you set):
+The page shows the project heading and two lines:
 
 ```
-frontend: hello world oxzoo-bun-vue_change-me
-backend: hello world oxzoo-bun-vue_change-me
+frontend: hello world oxzoo-bun-vue_<GREETING_TAG>
+backend: hello world oxzoo-bun-vue_<GREETING_TAG>
 ```
 
-`curl http://<host>/api/greeting` returns `hello world oxzoo-bun-vue_change-me` and `curl http://<host>/health` returns `ok`.
+`/api/greeting` returns `hello world oxzoo-bun-vue_<GREETING_TAG>` and `/health` returns `ok`.

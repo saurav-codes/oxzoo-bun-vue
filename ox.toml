@@ -1,40 +1,9 @@
-# oxzoo-bun-vue: Bun + Hono API with a Vite-built Vue 3 SPA.
-# nginx serves dist/ (spa = true) and proxies only the api_paths below.
+# Bun + Hono API serving a Vite/Vue SPA; bun comes from detection (bun.lock).
 
-name = "oxzoo-bun-vue"
-branch = "main"
-runtime = "bun"
-package_manager = "bun"
-port = 9105
-# NodeSource node bundles npm; distro npm conflicts with NodeSource nodejs
-# when both are requested from apt on one host.
-required_packages = ["nodejs"]
+[app]
+health = "/health"
 
-[[apt_sources]]
-name = "nodesource"
-url = "https://deb.nodesource.com/node_22.x"
-suite = "nodistro"
-components = ["main"]
-key_url = "https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key"
-
-[frontend]
-dist = "dist"
-api_paths = ["/api", "/health"]
-
-[[processes]]
-name = "web"
-command = "node_modules/.bin/bun src/index.ts"
-readiness = "http://127.0.0.1:{port}/health"
-
-[deploy]
-# Hooks run as the unprivileged project user, so bun installs as a local
-# devDependency (npm bootstraps it; exact pins keep it deterministic) and
-# the process runs it from node_modules/.bin.
-install = ["npm", "install"]
-build = ["npm", "run", "build"]
-health_url = "http://127.0.0.1:9105/health"
-
-[[domains]]
-name = "bun-vue.oxzoo.sorv.dev"
-tls = true
+[static]
+dir = "dist"
 spa = true
+api = ["/api", "/health"]
