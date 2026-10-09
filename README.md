@@ -1,6 +1,8 @@
 # oxzoo-bun-vue
 
-An [ox](https://github.com/saurav-codes/ox-dev) deploy example: a Bun + Hono API serving a Vite-built Vue 3 SPA, with one environment variable (`GREETING_TAG`) flowing to the backend at **runtime** and to the frontend at **build time**, deployed by ox onto a single Ubuntu VPS (systemd + nginx).
+Deployed with [ox](https://deploywithox.com): deploy a repo to your own server with one command, no Docker. [Docs](https://deploywithox.com/docs) · [Guide for this stack](https://deploywithox.com/docs/guides/hono-bun)
+
+An [ox](https://deploywithox.com) deploy example: a Bun + Hono API serving a Vite-built Vue 3 SPA, with one environment variable (`GREETING_TAG`) flowing to the backend at **runtime** and to the frontend at **build time**, deployed by ox onto a single Ubuntu VPS (systemd + nginx).
 
 ## Stack
 
